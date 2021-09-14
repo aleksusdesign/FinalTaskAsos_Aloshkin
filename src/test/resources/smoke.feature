@@ -3,6 +3,7 @@ Feature: Smoke
   I want to test all main site functional
   So that I can be sure that site works correctly
 
+  @1
   Scenario Outline: Check add product to wishlist
     Given User opens '<homePage>' page
     And User checks search field visibility
@@ -16,6 +17,7 @@ Feature: Smoke
       | homePage             | keyword | amountOfProducts |
       | https://www.asos.com | shorts  | 1                |
 
+  @2
   Scenario Outline: Check site main functions
     Given User opens '<homePage>' page
     And User checks that language switcher is '<languageSwitcher>'
@@ -36,6 +38,7 @@ Feature: Smoke
       | homePage              | languageSwitcher | country |
       | https://www.asos.com  | Ukraine          | ES      |
 
+  @3
   Scenario Outline: Check add product to cart
     Given User opens '<homePage>' page
     And User checks search field visibility
@@ -57,6 +60,7 @@ Feature: Smoke
       | homePage             | keyword |
       | https://www.asos.com | Bagpack |
 
+  @4
   Scenario Outline: Check sign in errors
     Given User opens '<homePage>' page
     When User clicks 'My Account' button

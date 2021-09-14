@@ -1,20 +1,32 @@
 package stepdefinitions;
 
 
+import utils.APIClient;
+import utils.APIException;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
+import io.cucumber.java.Scenario;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import io.cucumber.java.hu.De;
 import manager.PageFactoryManager;
+import org.junit.Rule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
 import pages.*;
+import utils.SlackMessage;
+import utils.SlackUtils;
+
+
+import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.github.bonigarcia.wdm.WebDriverManager.chromedriver;
 import static org.junit.Assert.*;
@@ -31,9 +43,12 @@ public class DefinitionSteps {
     LogInPage logInPage;
     BootsPage bootsPage;
     Actions action;
+    APIClient testRail;
     PageFactoryManager pageFactoryManager;
     private int minPrice;
     private int maxPrice;
+    private SlackMessage slackMessage;
+    private static final String REGEX = "\\D+";
     private static final String EXPECTED_BRAND1 = "ASOS DESIGN";
     private static final String EXPECTED_BRAND2 = "Base London";
 
@@ -43,7 +58,37 @@ public class DefinitionSteps {
         driver = new ChromeDriver();
         driver.manage().window().maximize();
         pageFactoryManager = new PageFactoryManager(driver);
+        testRail = new APIClient("https://aleksus.testrail.com");
+        testRail.setUser("aleksus20103@gmail.com");
+        testRail.setPassword("12345");
     }
+
+    @Rule
+    public TestWatcher watchman = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            Map data = new HashMap();
+            data.put("status_id", 5);
+            data.put("comment", "This test worked bad!");
+            try {
+                testRail.sendPost("add_result_for_case/T1/C1",data);
+            } catch (APIException | IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }
+
+        @Override
+        protected void succeeded(Description description) {
+            Map data = new HashMap();
+            data.put("status_id", 1);
+            data.put("comment", "This test worked fine!");
+            try {
+                testRail.sendPost("add_result_for_case/R1/T1",data);
+            } catch (APIException | IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }
+    };
 
     @Given("User opens {string} page")
     public void openPage(final String url) {
@@ -480,5 +525,37 @@ public class DefinitionSteps {
         for (String s : searchResultsPage.getDescriptionsList()) {
             assertTrue(s.toLowerCase().contains(keyword));
         }
+    }
+
+    @After
+    public void afterMethod(Scenario scenario) {
+        if(scenario.isFailed()) {
+            Map data = new HashMap();
+            data.put("status_id", 5);
+            data.put("comment", "This test worked bad!");
+            try {
+                testRail.sendPost("add_result_for_case/1/" + getCaseNumber(scenario), data);
+            } catch (APIException | IOException ioException) {
+                ioException.printStackTrace();
+            }
+            slackMessage = new SlackMessage("Oleksii", "Failed: " + scenario.getName(), ":red_circle:");
+            SlackUtils.sendMessage(slackMessage);
+        }
+        else {
+            Map data = new HashMap();
+            data.put("status_id", 1);
+            data.put("comment", "This test worked fine!");
+            try {
+                testRail.sendPost("add_result_for_case/1/" + getCaseNumber(scenario), data);
+            } catch (APIException | IOException ioException) {
+                ioException.printStackTrace();
+            }
+            slackMessage = new SlackMessage("Oleksii", "Passed: " + scenario.getName() + " :green_circle:", ":green_circle:");
+            SlackUtils.sendMessage(slackMessage);
+        }
+    }
+
+    public String getCaseNumber(Scenario scenario){
+        return scenario.getSourceTagNames().toString().replaceAll(REGEX,"");
     }
 }
