@@ -1,26 +1,25 @@
-package stepdefinitions;
+package runner;
 
 
-import utils.APIClient;
-import utils.APIException;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.Scenario;
-import io.cucumber.java.en.And;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import cucumber.api.Scenario;
+import cucumber.api.java.After;
+import cucumber.api.java.Before;
+import cucumber.api.java.en.And;
+import cucumber.api.java.en.Given;
+import cucumber.api.java.en.Then;
+import cucumber.api.java.en.When;
 import manager.PageFactoryManager;
-import org.junit.Rule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
 import pages.*;
+import utils.APIClient;
+import utils.APIException;
 import utils.SlackMessage;
 import utils.SlackUtils;
-
 
 import java.io.IOException;
 import java.util.Collections;
@@ -30,6 +29,7 @@ import java.util.Map;
 
 import static io.github.bonigarcia.wdm.WebDriverManager.chromedriver;
 import static org.junit.Assert.*;
+
 
 public class DefinitionSteps {
 
@@ -51,7 +51,6 @@ public class DefinitionSteps {
     private static final String REGEX = "\\D+";
     private static final String EXPECTED_BRAND1 = "ASOS DESIGN";
     private static final String EXPECTED_BRAND2 = "Base London";
-
     @Before
     public void testsSetUp() {
         chromedriver().setup();
@@ -63,37 +62,15 @@ public class DefinitionSteps {
         testRail.setPassword("12345");
     }
 
-    @Rule
-    public TestWatcher watchman = new TestWatcher() {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            Map data = new HashMap();
-            data.put("status_id", 5);
-            data.put("comment", "This test worked bad!");
-            try {
-                testRail.sendPost("add_result_for_case/T1/C1",data);
-            } catch (APIException | IOException ioException) {
-                ioException.printStackTrace();
-            }
-        }
-
-        @Override
-        protected void succeeded(Description description) {
-            Map data = new HashMap();
-            data.put("status_id", 1);
-            data.put("comment", "This test worked fine!");
-            try {
-                testRail.sendPost("add_result_for_case/R1/T1",data);
-            } catch (APIException | IOException ioException) {
-                ioException.printStackTrace();
-            }
-        }
-    };
-
     @Given("User opens {string} page")
     public void openPage(final String url) {
         homePage = pageFactoryManager.getHomePage();
         homePage.openHomePage(url);
+        takeScreenshot("user opening url");
+    }
+
+    private void takeScreenshot(String message) {
+        byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
     }
 
     @And("User checks header visibility")
@@ -554,6 +531,7 @@ public class DefinitionSteps {
             SlackUtils.sendMessage(slackMessage);
         }
     }
+
 
     public String getCaseNumber(Scenario scenario){
         return scenario.getSourceTagNames().toString().replaceAll(REGEX,"");

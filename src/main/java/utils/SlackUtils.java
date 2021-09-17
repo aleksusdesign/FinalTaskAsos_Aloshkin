@@ -9,7 +9,7 @@ import org.apache.http.impl.client.HttpClients;
 import java.io.IOException;
 
 public class SlackUtils {
-    private static String slackWebhookUrl = "https://hooks.slack.com/services/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";
+    private static String slackWebhookUrl = "https://hooks.slack.com/services/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";
 
     public static void sendMessage(SlackMessage message) {
         CloseableHttpClient client = HttpClients.createDefault();
@@ -24,7 +24,7 @@ public class SlackUtils {
             httpPost.setHeader("Accept", "application/json");
             httpPost.setHeader("Content-type", "application/json");
 
-            client.execute(httpPost);
+            Object a = client.execute(httpPost);
             client.close();
         } catch (IOException e) {
             e.printStackTrace();
